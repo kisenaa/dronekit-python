@@ -242,7 +242,7 @@ class Wind(object):
         self.wind_direction = wind_direction
         self.wind_speed = wind_speed
         self.wind_speed_z = wind_speed_z
-    
+
     def __str__(self):
         return "Wind: wind direction: {}, wind speed: {}, wind speed z: {}".format(self.wind_direction, self.wind_speed, self.wind_speed_z)
 
@@ -1421,12 +1421,12 @@ class Vehicle(HasObservers):
                 self._logger.info('...link restored.')
             self._heartbeat_timeout = False
 
-        self._last_heartbeat = None
+        # self._last_heartbeat = None
 
         @handler.forward_loop
         def listener(_):
             if self._heartbeat_lastreceived:
-                self._last_heartbeat = monotonic.monotonic() - self._heartbeat_lastreceived
+                # self._last_heartbeat = monotonic.monotonic() - self._heartbeat_lastreceived
                 self.notify_attribute_listeners('last_heartbeat', self.last_heartbeat)
 
     @property
@@ -1464,7 +1464,7 @@ class Vehicle(HasObservers):
             parameter passed to the :py:func:`connect() <dronekit.connect>` function.
 
         """
-        return self._last_heartbeat
+        return monotonic.monotonic() - self._heartbeat_lastreceived
 
     def on_message(self, name):
         """

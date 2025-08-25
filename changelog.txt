@@ -1,0 +1,2 @@
+https://github.com/dronekit/dronekit-python/pull/1023
+fixed last_heartbeat function #1023
