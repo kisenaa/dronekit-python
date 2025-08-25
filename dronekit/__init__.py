@@ -1279,14 +1279,19 @@ class Vehicle(HasObservers):
             if not self._wp_loaded:
                 self._wploader.clear()
                 self._wploader.expected_count = msg.count
-                self._master.waypoint_request_send(0)
+                # self._master.waypoint_request_send(0)
+                self._master.mav.mission_request_int_send(
+                    target_system=self._master.target_system,
+                    target_component=self._master.target_component,
+                    seq=0  # Sequence number of the mission item to request
+                )
 
         @self.on_message(['HOME_POSITION'])
         def listener(self, name, msg):
             self._home_location = LocationGlobal(msg.latitude / 1.0e7, msg.longitude / 1.0e7, msg.altitude / 1000.0)
             self.notify_attribute_listeners('home_location', self.home_location, cache=True)
 
-        @self.on_message(['WAYPOINT', 'MISSION_ITEM'])
+        @self.on_message(['WAYPOINT', 'MISSION_ITEM', 'MISSION_ITEM_INT'])
         def listener(self, name, msg):
             if not self._wp_loaded:
                 if msg.seq == 0:
@@ -1303,13 +1308,20 @@ class Vehicle(HasObservers):
                     self._wploader.add(msg)
 
                     if msg.seq + 1 < self._wploader.expected_count:
-                        self._master.waypoint_request_send(msg.seq + 1)
+                        if name == 'MISSION_ITEM':
+                            self._master.waypoint_request_send(msg.seq + 1)
+                        else:
+                            self._master.mav.mission_request_int_send(
+                                target_system=self._master.target_system,
+                                target_component=self._master.target_component,
+                                seq=msg.seq + 1  # Sequence number of the mission item to request
+                            )
                     else:
                         self._wp_loaded = True
                         self.notify_attribute_listeners('commands', self.commands)
 
         # Waypoint send to master
-        @self.on_message(['WAYPOINT_REQUEST', 'MISSION_REQUEST'])
+        @self.on_message(['WAYPOINT_REQUEST', 'MISSION_REQUEST', 'MISSION_REQUEST_INT'])
         def listener(self, name, msg):
             if self._wp_uploaded is not None:
                 wp = self._wploader.wp(msg.seq)
@@ -2233,9 +2245,14 @@ class Vehicle(HasObservers):
         else:
             raise ValueError('Expecting location to be LocationGlobal or LocationGlobalRelative.')
 
-        self._master.mav.mission_item_send(0, 0, 0, frame,
+        # self._master.mav.mission_item_send(0, 0, 0, frame,
+        #                                    mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 2, 0, 0,
+        #                                    0, 0, 0, location.lat, location.lon,
+        #                                    alt)
+
+        self._master.mav.mission_item_int_send(0, 0, 0, frame,
                                            mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 2, 0, 0,
-                                           0, 0, 0, location.lat, location.lon,
+                                           0, 0, 0, int(location.lat * 1e7), int(location.lon * 1e7),
                                            alt)
 
         if airspeed is not None:
@@ -2917,7 +2934,7 @@ class Parameters(MutableMapping, HasObservers):
         return super(Parameters, self).on_attribute(attr_name, *args, **kwargs)
 
 
-class Command(mavutil.mavlink.MAVLink_mission_item_message):
+class Command(mavutil.mavlink.MAVLink_mission_item_int_message):
     """
     A waypoint object.
 

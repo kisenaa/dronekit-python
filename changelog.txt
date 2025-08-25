@@ -3,3 +3,7 @@ fixed last_heartbeat function #1023
 
 https://github.com/dronekit/dronekit-python/pull/1002/files
 Fixed gimbal target location#1002
+
+https://github.com/dronekit/dronekit-python/pull/1209/files
+Fixed Errors!
+#1209
