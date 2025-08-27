@@ -1400,8 +1400,12 @@ class Vehicle(HasObservers):
         self._heartbeat_lastreceived = 0
         self._heartbeat_timeout = False
 
-        self._heartbeat_warning = 5
-        self._heartbeat_error = 30
+        if self._heartbeat_error is None:
+            self._heartbeat_error = 30
+
+        if self._heartbeat_warning is None:
+            self._heartbeat_warning = 5
+
         self._heartbeat_system = None
 
         @handler.forward_loop
@@ -2318,12 +2322,13 @@ class Vehicle(HasObservers):
         """
         return self._master.mav
 
-    def initialize(self, rate=4, heartbeat_timeout=30):
+    def initialize(self, rate=4, heartbeat_timeout=30, heartbeat_warning=5):
         self._handler.start()
 
         # Start heartbeat polling.
         start = monotonic.monotonic()
         self._heartbeat_error = heartbeat_timeout or 0
+        self._heartbeat_warning = heartbeat_warning or 0
         self._heartbeat_started = True
         self._heartbeat_lastreceived = start
 
@@ -3157,7 +3162,9 @@ def connect(ip,
             heartbeat_timeout=30,
             source_system=255,
             source_component=0,
-            use_native=False):
+            use_native=False,
+            heartbeat_warning=5
+            ):
     """
     Returns a :py:class:`Vehicle` object connected to the address specified by string parameter ``ip``.
     Connection string parameters (``ip``) for different targets are listed in the :ref:`getting started guide <get_started_connecting>`.
@@ -3225,7 +3232,7 @@ def connect(ip,
         vehicle._autopilot_logger.addHandler(ErrprinterHandler(status_printer))
 
     if _initialize:
-        vehicle.initialize(rate=rate, heartbeat_timeout=heartbeat_timeout)
+        vehicle.initialize(rate=rate, heartbeat_timeout=heartbeat_timeout, heartbeat_warning=heartbeat_warning)
 
     if wait_ready:
         if wait_ready is True:
