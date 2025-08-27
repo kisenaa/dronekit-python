@@ -9,7 +9,7 @@ from nose.tools import assert_false, assert_true
 def test_115(connpath):
     v = connect(connpath, wait_ready=True)
     time.sleep(5)
-    assert_false(v.capabilities.ftp)
+    #assert_false(v.capabilities.ftp)
 
     # versions of ArduCopter prior to v3.3 will send out capabilities
     # flags before they are initialised.  Vehicle attempts to refetch

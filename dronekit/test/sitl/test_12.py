@@ -12,6 +12,7 @@ def current_milli_time():
 def test_timeout(connpath):
     v = connect(connpath, wait_ready=True)
 
+    print("Available parameters:", list(v.parameters.keys()))
     value = v.parameters['THR_MIN']
     assert_equals(type(value), float)
 

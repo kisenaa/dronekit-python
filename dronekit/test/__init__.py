@@ -15,8 +15,13 @@ if 'SITL_RATE' in os.environ:
 
 def setup_sitl():
     global sitl
-    sitl = SITL()
-    sitl.download('copter', '3.3')
+    current_dir = os.path.dirname(__file__)
+    firmwareCopter = os.path.join(current_dir, '../../', 'firmware', '4.5.4', 'copter', 'arducopter')
+    firmwarePlane = os.path.join(current_dir, '../../', 'firmware', '4.5.4', 'plane','arduplane')
+    defaultCopterParams = os.path.join(current_dir, '../../', 'firmware', '4.5.4', 'copter', 'default.parm')
+    defaultPlaneParams = os.path.join(current_dir, '../../', 'firmware', '4.5.4', 'plane', 'plane.parm')
+    sitl = SITL(path=firmwareCopter)
+    sitl_args = ['--defaults', defaultCopterParams]
     sitl.launch(sitl_args, await_ready=True, restart=True)
 
 
