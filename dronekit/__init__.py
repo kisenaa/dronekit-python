@@ -1323,11 +1323,22 @@ class Vehicle(HasObservers):
         # Waypoint send to master
         @self.on_message(['WAYPOINT_REQUEST', 'MISSION_REQUEST', 'MISSION_REQUEST_INT'])
         def listener(self, name, msg):
-            if self._wp_uploaded is not None:
-                wp = self._wploader.wp(msg.seq)
-                handler.fix_targets(wp)
-                self._master.mav.send(wp)
-                self._wp_uploaded[msg.seq] = True
+            try:
+                if self._wp_uploaded is not None:
+                    wp = self._wploader.wp(msg.seq)
+                    handler.fix_targets(wp)
+                    if wp.msgname == 'MISSION_ITEM_INT':
+                        if isinstance(wp.x, float):
+                            wp.x = int(wp.x * 1e7)
+                        if isinstance(wp.y, float):
+                            wp.y = int(wp.y * 1e7)
+                    self._master.mav.send(wp)
+                    self._wp_uploaded[msg.seq] = True
+            except Exception as e:
+                import traceback
+                print("exception in sending waypoint/mission item")
+                traceback.print_exc()
+                raise e
 
         # TODO: Waypoint loop listeners
 
@@ -1400,11 +1411,8 @@ class Vehicle(HasObservers):
         self._heartbeat_lastreceived = 0
         self._heartbeat_timeout = False
 
-        if self._heartbeat_error is None:
-            self._heartbeat_error = 30
-
-        if self._heartbeat_warning is None:
-            self._heartbeat_warning = 5
+        self._heartbeat_error = 90
+        self._heartbeat_warning = 40
 
         self._heartbeat_system = None
 
@@ -2322,7 +2330,7 @@ class Vehicle(HasObservers):
         """
         return self._master.mav
 
-    def initialize(self, rate=4, heartbeat_timeout=30, heartbeat_warning=5):
+    def initialize(self, rate=4, heartbeat_timeout=40, heartbeat_warning=15):
         self._handler.start()
 
         # Start heartbeat polling.
@@ -3159,11 +3167,11 @@ def connect(ip,
             vehicle_class=None,
             rate=4,
             baud=115200,
-            heartbeat_timeout=30,
+            heartbeat_timeout=40,
             source_system=255,
             source_component=0,
             use_native=False,
-            heartbeat_warning=5
+            heartbeat_warning=15
             ):
     """
     Returns a :py:class:`Vehicle` object connected to the address specified by string parameter ``ip``.
@@ -3202,6 +3210,7 @@ def connect(ip,
     :param int source_system: The MAVLink ID of the :py:class:`Vehicle` object returned by this method (by default 255).
     :param int source_component: The MAVLink Component ID fo the :py:class:`Vehicle` object returned by this method (by default 0).
     :param bool use_native: Use precompiled MAVLink parser.
+    :param int heartbeat_warning: Number of seconds without a heartbeat before a warning is logged (default is 15s).
 
         .. note::
 
